@@ -1,0 +1,134 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: smartfinance
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: smartfinance_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - smartfinance-net
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - smartfinance-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - smartfinance-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@smartfinance.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - smartfinance-net
+
+  transactions-api:
+    build:
+      context: ../src/Services/Transactions.API
+      dockerfile: Dockerfile
+    container_name: transactions-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=smartfinance_db;Username=smartfinance;Password=secret
+      - Redis__Host=redis
+      - RabbitMQ__Host=rabbitmq
+    ports:
+      - "5001:80"
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - smartfinance-net
+
+  analytics-api:
+    build:
+      context: ../src/Services/Analytics.API
+      dockerfile: Dockerfile
+    container_name: analytics-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=smartfinance_db;Username=smartfinance;Password=secret
+      - Redis__Host=redis
+      - RabbitMQ__Host=rabbitmq
+    ports:
+      - "5002:80"
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - smartfinance-net
+
+  notifications-api:
+    build:
+      context: ../src/Services/Notifications.API
+      dockerfile: Dockerfile
+    container_name: notifications-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RabbitMQ__Host=rabbitmq
+      - Redis__Host=redis
+    ports:
+      - "5003:80"
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - smartfinance-net
+
+  ai-advisor-api:
+    build:
+      context: ../src/Services/AI-Advisor.API
+      dockerfile: Dockerfile
+    container_name: ai-advisor-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RabbitMQ__Host=rabbitmq
+      - Redis__Host=redis
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=smartfinance_db;Username=smartfinance;Password=secret
+    ports:
+      - "5004:80"
+    depends_on:
+      - rabbitmq
+      - redis
+      - postgres
+    networks:
+      - smartfinance-net
+
+networks:
+  smartfinance-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
