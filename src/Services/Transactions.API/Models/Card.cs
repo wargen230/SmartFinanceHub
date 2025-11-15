@@ -21,6 +21,6 @@ namespace Transactions.API.Models
         public DateTime ExpiryDate { get; set; }
         [Column("provider")]
         public string Provider { get; set; } = null!;
-        public Transaction? Transaction { get; set; }
+        public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     }
 }

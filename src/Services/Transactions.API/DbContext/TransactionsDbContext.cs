@@ -20,31 +20,37 @@ namespace Transactions.API.Db
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Transactions.API.Models.User>()
+            modelBuilder.Entity<User>()
                 .HasOne(u => u.Account)
                 .WithOne(a => a.User)
                 .HasForeignKey<Account>(u => u.UserId);
 
-            modelBuilder.Entity<Transactions.API.Models.Card>()
+            modelBuilder.Entity<Card>()
                 .HasOne(c => c.Account)
                 .WithMany(a => a.Cards)
                 .HasForeignKey(c => c.AccountId);
 
-            modelBuilder.Entity<Transactions.API.Models.Category>()
+            modelBuilder.Entity<Category>()
                 .HasOne(c => c.User)
                 .WithMany(u => u.Categories)
                 .HasForeignKey(c => c.UserId)
                 .IsRequired(false);
 
-            modelBuilder.Entity<Transactions.API.Models.Transaction>()
+            modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.Account)
                 .WithMany(a => a.Transactions)
                 .HasForeignKey(t => t.AccountId);
 
-            modelBuilder.Entity<Transactions.API.Models.Transaction>()
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Card)
+                .WithMany(c => c.Transactions)
+                .HasForeignKey(t => t.CardId);
+
+            modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.Category)
-                .WithOne(c => c.Transaction)
-                .HasForeignKey<Category>(t => t.CategoryId);
+                .WithMany()
+                .HasForeignKey(t => t.CategoryId);
         }
+
     }
 }
